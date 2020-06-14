@@ -21,3 +21,26 @@ jobs:
         sudo ./install.sh /usr/local
     - name: Run bats tests
       run: bats ./test
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install cross
+      run: cargo install cross
+    - name: rustup show
+      run: rustup show
+    - name: Build mdctags for x86_64-unknown-linux-gnu
+      run: cargo build --release --target x86_64-unknown-linux-gnu
+    - name: Build mdctags for x86_64-pc-windows-gnu
+      run: cross build --release --target x86_64-pc-windows-gnu
+    - name: Upload mdctags for x86_64-unknown-linux-gnu
+      uses: actions/upload-artifact@v1
+      with:
+        name: mdctags-x86_64-unknown-linux-gnu
+        path: target/x86_64-unknown-linux-gnu/release/mdctags
+    - name: Upload mdctags for x86_64-pc-windows-gnu
+      uses: actions/upload-artifact@v1
+      with:
+        name: mdctags-x86_64-pc-windows-gnu
+        path: target/x86_64-pc-windows-gnu/release/mdctags.exe
