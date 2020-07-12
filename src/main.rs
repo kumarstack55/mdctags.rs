@@ -133,32 +133,27 @@ fn main() {
     // 转换 path 至绝对路径
     let path = &args[1];
 
-    //let contents = fs::read_to_string(path).expect("");
     let mut stack: Vec<HeadingItem> = Vec::new();
     let mut in_code = CodeBlockKind::NotInCodeBlock;
     let mut line_no = 0;
 
-    if let Ok(lines) = read_lines(path) {
-        for line in lines {
-            if let Ok(line2) = line {
-                line_no = line_no + 1;
+    for line in read_lines(path).unwrap() {
+        if let Ok(line2) = line {
+            line_no = line_no + 1;
 
-                update_in_code(&line2, &mut in_code);
-                if match in_code {
-                    CodeBlockKind::NotInCodeBlock => false,
-                    _ => true,
-                } {
-                    continue;
-                }
+            update_in_code(&line2, &mut in_code);
+            if match in_code {
+                CodeBlockKind::NotInCodeBlock => false,
+                _ => true,
+            } {
+                continue;
+            }
 
-                if is_heading(&line2) {
-                    process_heading(&line2, path, &mut stack, line_no);
-                }
+            if is_heading(&line2) {
+                process_heading(&line2, path, &mut stack, line_no);
             }
         }
     }
-    //for line in contents.lines() {
-    //}
 }
 
 #[cfg(test)]
