@@ -110,6 +110,26 @@ fn process_heading(line: &str, path: &String, stack: &mut Vec<HeadingItem>, line
     stack.insert(0, item);
 }
 
+fn process_markdown_line(
+    line: &str,
+    mut in_code: &mut CodeBlockKind,
+    path: &String,
+    mut stack: &mut Vec<HeadingItem>,
+    line_no: u32,
+) {
+    update_in_code(&line, &mut in_code);
+    if match in_code {
+        CodeBlockKind::NotInCodeBlock => false,
+        _ => true,
+    } {
+        return;
+    }
+
+    if is_heading(&line) {
+        process_heading(&line, path, &mut stack, line_no);
+    }
+}
+
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where
     P: AsRef<Path>,
@@ -138,20 +158,9 @@ fn main() {
     let mut line_no = 0;
 
     for line in read_lines(path).unwrap() {
-        if let Ok(line2) = line {
-            line_no = line_no + 1;
-
-            update_in_code(&line2, &mut in_code);
-            if match in_code {
-                CodeBlockKind::NotInCodeBlock => false,
-                _ => true,
-            } {
-                continue;
-            }
-
-            if is_heading(&line2) {
-                process_heading(&line2, path, &mut stack, line_no);
-            }
+        line_no = line_no + 1;
+        if let Ok(mdline) = line {
+            process_markdown_line(&mdline, &mut in_code, path, &mut stack, line_no);
         }
     }
 }
