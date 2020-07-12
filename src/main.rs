@@ -1,5 +1,8 @@
 use regex::Regex;
 use std::fs;
+use std::fs::File;
+use std::io::{self, BufRead};
+use std::path::Path;
 
 #[macro_use]
 extern crate lazy_static;
@@ -107,6 +110,14 @@ fn process_heading(line: &str, path: &String, stack: &mut Vec<HeadingItem>, line
     stack.insert(0, item);
 }
 
+fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
+where
+    P: AsRef<Path>,
+{
+    let file = File::open(filename)?;
+    Ok(io::BufReader::new(file).lines())
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 2 {
@@ -122,25 +133,32 @@ fn main() {
     // 转换 path 至绝对路径
     let path = &args[1];
 
-    let contents = fs::read_to_string(path).expect("");
+    //let contents = fs::read_to_string(path).expect("");
     let mut stack: Vec<HeadingItem> = Vec::new();
     let mut in_code = CodeBlockKind::NotInCodeBlock;
     let mut line_no = 0;
-    for line in contents.lines() {
-        line_no = line_no + 1;
 
-        update_in_code(line, &mut in_code);
-        if match in_code {
-            CodeBlockKind::NotInCodeBlock => false,
-            _ => true,
-        } {
-            continue;
-        }
+    if let Ok(lines) = read_lines(path) {
+        for line in lines {
+            if let Ok(line2) = line {
+                line_no = line_no + 1;
 
-        if is_heading(line) {
-            process_heading(line, path, &mut stack, line_no);
+                update_in_code(&line2, &mut in_code);
+                if match in_code {
+                    CodeBlockKind::NotInCodeBlock => false,
+                    _ => true,
+                } {
+                    continue;
+                }
+
+                if is_heading(&line2) {
+                    process_heading(&line2, path, &mut stack, line_no);
+                }
+            }
         }
     }
+    //for line in contents.lines() {
+    //}
 }
 
 #[cfg(test)]
